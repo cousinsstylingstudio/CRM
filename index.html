@@ -419,7 +419,7 @@ a{color:var(--sky);}
               <input class="d-inp" id="d-dmp" placeholder="Direct line" onblur="handleDmPhoneChange(this.value)">
               <div id="d-dmp-history" style="margin-top:3px;"></div>
             </div>
-            <div class="d-field"><label>Email</label><input class="d-inp" id="d-dme" placeholder="email@org.com" style="color:var(--sky);" oninput="if(selId!==null){getRec(selId).dmEmail=this.value.trim();}"></div>
+            <div class="d-field"><label>Email <button onclick="testEmail()" title="Send test email" style="font-family:'DM Mono',monospace;font-size:7px;padding:1px 5px;border-radius:3px;background:rgba(79,168,213,0.12);color:var(--sky);border:1px solid rgba(79,168,213,0.3);cursor:pointer;margin-left:4px;">&#x2709; Test</button></label><input class="d-inp" id="d-dme" placeholder="email@org.com" style="color:var(--sky);" oninput="if(selId!==null){getRec(selId).dmEmail=this.value.trim();}"></div>
           </div>
         </div>
 
@@ -534,7 +534,63 @@ a{color:var(--sky);}
           </div>
         </div>
 
-        <!-- CALL HISTORY + AVATAR -->
+        <!-- MARKET INTELLIGENCE -->
+        <div>
+          <div class="sct" style="color:var(--vio);">&#x1F4CA; Market Intelligence</div>
+          <div style="font-size:10px;color:var(--dim);margin-bottom:10px;">Build this from every conversation. The more you fill in, the smarter your approach gets over time.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">Primary Challenge</div>
+              <input class="d-inp" id="mi-challenge" placeholder="e.g. Staff wear too many hats" oninput="saveMarketIntel()" style="width:100%;box-sizing:border-box;">
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">Existing Provider</div>
+              <input class="d-inp" id="mi-provider" placeholder="e.g. None / local vendor / in-house" oninput="saveMarketIntel()" style="width:100%;box-sizing:border-box;">
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">Current Programming</div>
+              <input class="d-inp" id="mi-programming" placeholder="e.g. Weekly bingo, monthly outings" oninput="saveMarketIntel()" style="width:100%;box-sizing:border-box;">
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">Staff Capacity</div>
+              <select class="d-inp" id="mi-staffcap" onchange="saveMarketIntel()" style="width:100%;box-sizing:border-box;">
+                <option value="">Unknown</option>
+                <option value="Low">Low -- stretched thin</option>
+                <option value="Medium">Medium -- manageable</option>
+                <option value="High">High -- well staffed</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">Decision Process</div>
+              <input class="d-inp" id="mi-decision" placeholder="e.g. AD recommends, ED approves" oninput="saveMarketIntel()" style="width:100%;box-sizing:border-box;">
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">Funding Source</div>
+              <select class="d-inp" id="mi-funding" onchange="saveMarketIntel()" style="width:100%;box-sizing:border-box;">
+                <option value="">Unknown</option>
+                <option value="Facility budget">Facility budget</option>
+                <option value="Grant funded">Grant funded</option>
+                <option value="Family pay">Families pay</option>
+                <option value="County contract">County contract</option>
+                <option value="Mixed">Mixed</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">Budget Timing</div>
+              <input class="d-inp" id="mi-budget-timing" placeholder="e.g. Renews July, fiscal year Q3" oninput="saveMarketIntel()" style="width:100%;box-sizing:border-box;">
+            </div>
+            <div>
+              <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">Buying Trigger</div>
+              <input class="d-inp" id="mi-trigger" placeholder="e.g. New AD starting, census pressure" oninput="saveMarketIntel()" style="width:100%;box-sizing:border-box;">
+            </div>
+          </div>
+          <div>
+            <div style="font-family:'DM Mono',monospace;font-size:8px;text-transform:uppercase;color:var(--vio);margin-bottom:3px;">How They Described the Problem (their exact words)</div>
+            <textarea class="d-inp" id="mi-language" placeholder='e.g. "Caregivers kind of do it all around here."' oninput="autoResizeTA(this);saveMarketIntel();" style="width:100%;box-sizing:border-box;resize:none;min-height:54px;line-height:1.6;"></textarea>
+          </div>
+        </div>
+
+<!-- CALL HISTORY + AVATAR -->
         <div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
             <div class="sct" style="margin-bottom:0;color:var(--sky);">&#x1F4DE; Call History</div>
@@ -1399,6 +1455,7 @@ function selectFac(i){
   renderFU(i);
   loadCallHistory(i);
   loadPhoneHistory(i);
+  loadMarketIntel(i);
   // script
   switchScript(activeScript);
 }
@@ -4210,6 +4267,58 @@ function toggleRightPanel(){
     rp.style.width='16px';
     if(tab)tab.innerHTML='&#x276E;';rp.dataset.collapsed='1';
   }
+}
+
+
+function saveMarketIntel(){
+  if(selId===null) return;
+  var rec=getRec(selId);
+  rec.marketIntel={
+    challenge:(el('mi-challenge')||{value:''}).value,
+    provider:(el('mi-provider')||{value:''}).value,
+    programming:(el('mi-programming')||{value:''}).value,
+    staffCap:(el('mi-staffcap')||{value:''}).value,
+    decision:(el('mi-decision')||{value:''}).value,
+    funding:(el('mi-funding')||{value:''}).value,
+    budgetTiming:(el('mi-budget-timing')||{value:''}).value,
+    trigger:(el('mi-trigger')||{value:''}).value,
+    language:(el('mi-language')||{value:''}).value,
+    updatedAt:new Date().toISOString()
+  };
+  save();
+}
+
+function loadMarketIntel(i){
+  var rec=getRec(i);
+  var mi=rec.marketIntel||{};
+  var fields={
+    'mi-challenge':'challenge','mi-provider':'provider','mi-programming':'programming',
+    'mi-staffcap':'staffCap','mi-decision':'decision','mi-funding':'funding',
+    'mi-budget-timing':'budgetTiming','mi-trigger':'trigger','mi-language':'language'
+  };
+  Object.keys(fields).forEach(function(id){
+    var el2=el(id);
+    if(el2) el2.value=mi[fields[id]]||'';
+    if(el2&&el2.tagName==='TEXTAREA') autoResizeTA(el2);
+  });
+}
+
+function testEmail(){
+  if(selId===null){showToast('Select an org first');return;}
+  var rec=getRec(selId);
+  var email=rec.dmEmail||(el('d-dme')||{}).value||'';
+  if(!email.trim()){showToast('No email on file');return;}
+  var facName=FAC[selId].name;
+  var dmName=rec.dmName||'there';
+  var subject=encodeURIComponent('Cousins Styling Studio -- Quick Check');
+  var body=encodeURIComponent(
+    'Hi '+dmName+',\n\n'
+    +'I wanted to make sure I have the right email for you before I send over some information about Cousins Styling Studio and our programming for '+facName+'.\n\n'
+    +'No action needed on your end -- just reply if this reaches you and I will follow up with the full overview.\n\n'
+    +'Thank you,\nJordyn Brown\nCousins Styling Studio\nMoreno Valley, CA\n951-653-4477'
+  );
+  window.location.href='mailto:'+email+'?subject='+subject+'&body='+body;
+  showToast('Opening email app...');
 }
 
 function showToast(msg){var t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2200);}
