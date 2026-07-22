@@ -1551,15 +1551,62 @@ function setFit(n,silent){
 function setCP(v){if(selId!==null)getRec(selId).cp=v;}
 function scheduleNext(){}
 // ── LOG ──
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function renderLog(rec){
   var log=rec.log||[];
   el('d-log-count').textContent=log.length;
   var wrap=el('d-log');wrap.innerHTML='';
-  log.slice().reverse().forEach(function(l){
-    var d=document.createElement('div');d.className='log-entry';
-    d.innerHTML='<div class="log-date">'+l.date+'</div><div class="log-result">'+l.result+'</div>'+(l.note?'<div class="log-note">'+l.note+'</div>':'');
+  log.map(function(l,i){return {l:l,i:i};}).reverse().forEach(function(o){
+    var l=o.l,idx=o.i;
+    var d=document.createElement('div');d.className='log-entry';d.setAttribute('data-idx',idx);
+    var resLabel=(l.result!=null&&l.result!=='')?l.result:(l.action||'Note');
+    var noteHtml=l.note?'<div class="log-note">'+esc(l.note)+'</div>':'';
+    d.innerHTML='<div style="display:flex;align-items:flex-start;gap:8px;">'
+      +'<div style="flex:1;min-width:0;">'
+        +'<div class="log-date">'+esc(l.date)+'</div>'
+        +'<div class="log-result">'+esc(resLabel)+'</div>'+noteHtml
+      +'</div>'
+      +'<div style="display:flex;gap:4px;flex-shrink:0;">'
+        +'<button title="Edit this entry" onclick="editLogEntry('+idx+')" style="background:none;border:1px solid var(--bdr);color:var(--dim);border-radius:4px;font-size:9px;cursor:pointer;padding:3px 7px;font-family:DM Mono,monospace;">EDIT</button>'
+        +'<button title="Delete this entry" onclick="delLogEntry('+idx+')" style="background:none;border:1px solid var(--bdr);color:var(--dim);border-radius:4px;font-size:9px;cursor:pointer;padding:3px 6px;">&#x2715;</button>'
+      +'</div>'
+    +'</div>';
     wrap.appendChild(d);
   });
+}
+function editLogEntry(idx){
+  if(selId===null)return;
+  var rec=getRec(selId);var l=(rec.log||[])[idx];if(!l)return;
+  var d=el('d-log').querySelector('[data-idx="'+idx+'"]');if(!d)return;
+  var inS='width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--bdr);color:var(--txt);border-radius:4px;padding:6px 8px;font-size:11px;';
+  d.innerHTML='<div style="display:flex;flex-direction:column;gap:6px;">'
+    +'<label style="font-family:DM Mono,monospace;font-size:8px;color:var(--dim);">DATE</label>'
+    +'<input id="le-date" value="'+esc(l.date)+'" style="'+inS+'">'
+    +'<label style="font-family:DM Mono,monospace;font-size:8px;color:var(--dim);">RESULT / OUTCOME</label>'
+    +'<input id="le-res" value="'+esc(l.result!=null?l.result:'')+'" placeholder="e.g. Voicemail Left, Note" style="'+inS+'">'
+    +'<label style="font-family:DM Mono,monospace;font-size:8px;color:var(--dim);">NOTE</label>'
+    +'<textarea id="le-note" style="'+inS+'min-height:90px;line-height:1.5;resize:vertical;">'+esc(l.note)+'</textarea>'
+    +'<div style="display:flex;gap:6px;margin-top:2px;">'
+      +'<button onclick="saveLogEntry('+idx+')" style="background:var(--em);color:var(--bg);border:none;border-radius:4px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;">Save</button>'
+      +'<button onclick="renderLog(getRec(selId))" style="background:none;border:1px solid var(--bdr);color:var(--dim);border-radius:4px;padding:6px 14px;font-size:11px;cursor:pointer;">Cancel</button>'
+    +'</div>'
+  +'</div>';
+  var t=el('le-note');if(t){autoResizeTA&&autoResizeTA(t);t.focus();}
+}
+function saveLogEntry(idx){
+  if(selId===null)return;
+  var rec=getRec(selId);var l=(rec.log||[])[idx];if(!l)return;
+  l.date=el('le-date').value;
+  l.result=el('le-res').value.trim();
+  l.note=el('le-note').value;
+  saveRec(true);renderLog(rec);updateStats();showToast('Log entry updated');
+}
+function delLogEntry(idx){
+  if(selId===null)return;
+  if(!confirm('Delete this log entry permanently?'))return;
+  var rec=getRec(selId);if(!rec.log)return;
+  rec.log.splice(idx,1);
+  saveRec(true);renderLog(rec);updateStats();showToast('Log entry deleted');
 }
 function addLog(){
   if(selId===null)return;
