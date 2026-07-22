@@ -3622,7 +3622,76 @@ function apiFetch(body){
 }
 function importJSON(){
   var input=document.createElement('input');input.type='file';input.accept='.json';
-  input.onchange=function(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){try{var data=JSON.parse(ev.target.result);if(data.crm&&!Array.isArray(data.crm)){var ex={};try{ex=JSON.parse(localStorage.getItem('css_crm_v7')||'{}');}catch(e2){}var added=0,updated=0;Object.keys(data.crm).forEach(function(k){if(!ex[k]){ex[k]=data.crm[k];added++;}else{var b=data.crm[k],x=ex[k];if((b.log||[]).length>(x.log||[]).length)x.log=b.log;if(b.dmEmail&&!x.dmEmail)x.dmEmail=b.dmEmail;if(b.dmName&&!x.dmName)x.dmName=b.dmName;updated++;}});localStorage.setItem('css_crm_v7',JSON.stringify(ex));if(data.followups)localStorage.setItem('css_fu_v7',JSON.stringify(data.followups));if(data.killZone)localStorage.setItem('css_kz_v1',JSON.stringify(data.killZone));load();filterList();updateStats();showToast('Imported: '+added+' new, '+updated+' updated');return;}if(Array.isArray(data)){importLeadsArray(data);return;}if(data.leads){importLeadsArray(data.leads);return;}showToast('Unrecognized format');}catch(err){showToast('Import failed: '+err.message);}};reader.readAsText(file);};input.click();
+  input.onchange=function(e){
+    var file=e.target.files[0];if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var data=JSON.parse(ev.target.result);
+        if(data.crm&&!Array.isArray(data.crm)){
+          var ex={};try{ex=JSON.parse(localStorage.getItem('css_crm_v7')||'{}');}catch(e2){}
+          /* PROTECTED FIELDS: an import may FILL these when you left them blank,
+             but must NEVER overwrite a value you already typed. Conflicts become
+             opt-in suggestions instead of silent changes. */
+          var PROT=['dmName','dmEmail','dmPhone','dmType','dmConfirmed','stage','priority','cp','nextAction','nextDate','offer','notes','waitingOn','owner','acv','propval','payterms','lostcat','lostnote','lostReason'];
+          function blank(v){return v===undefined||v===null||v===''||v===0;}
+          function logSig(L){return (L&&(L.date||''))+'||'+(L&&(L.note||''))+'||'+(L&&(L.result||''));}
+          var added=0,filled=0,suggest=[];
+          Object.keys(data.crm).forEach(function(k){
+            var b=data.crm[k];
+            if(!ex[k]){ex[k]=b;added++;return;}
+            var x=ex[k];
+            if(Array.isArray(b.log)&&b.log.length){
+              var seen={};(x.log||[]).forEach(function(L){seen[logSig(L)]=1;});
+              var merged=(x.log||[]).slice();
+              b.log.forEach(function(L){var g=logSig(L);if(!seen[g]){merged.push(L);seen[g]=1;}});
+              x.log=merged;
+            }
+            if(Array.isArray(b.callEntries)&&b.callEntries.length){
+              var ids={};(x.callEntries||[]).forEach(function(c){ids[c.id]=1;});
+              var mc=(x.callEntries||[]).slice();
+              b.callEntries.forEach(function(c){if(!ids[c.id]){mc.push(c);ids[c.id]=1;}});
+              x.callEntries=mc;
+            }
+            PROT.forEach(function(f){
+              if(!(f in b))return;
+              if(blank(x[f])&&!blank(b[f])){x[f]=b[f];filled++;}
+              else if(!blank(x[f])&&!blank(b[f])&&String(x[f]).trim()!==String(b[f]).trim()){
+                suggest.push({id:k,field:f,current:x[f],incoming:b[f]});
+              }
+            });
+          });
+          if(Array.isArray(data.followups)){
+            var fu=[];try{fu=JSON.parse(localStorage.getItem('css_fu_v7')||'[]');}catch(e3){}
+            var fsig={};fu.forEach(function(f){fsig[f.facId+'|'+f.date+'|'+f.note]=1;});
+            data.followups.forEach(function(f){var sg=f.facId+'|'+f.date+'|'+f.note;if(!fsig[sg]){fu.push(f);fsig[sg]=1;}});
+            localStorage.setItem('css_fu_v7',JSON.stringify(fu));
+          }
+          if(data.killZone)localStorage.setItem('css_kz_v1',JSON.stringify(data.killZone));
+          localStorage.setItem('css_crm_v7',JSON.stringify(ex));
+          if(suggest.length){
+            window.__cssSuggestedChanges=suggest;
+            console.log('[CRM] '+suggest.length+' suggested change(s) NOT applied (they would overwrite your entries):',suggest);
+            var msg=suggest.length+' field(s) in this file differ from what you already have.\n\nYour values were KEPT -- nothing was overwritten.\n\nClick OK ONLY if this is a trusted correction file and you want to apply those '+suggest.length+' change(s).\nClick Cancel to keep everything exactly as-is.';
+            if(confirm(msg)){
+              var applied=0;
+              suggest.forEach(function(sc){if(ex[sc.id]){ex[sc.id][sc.field]=sc.incoming;applied++;}});
+              localStorage.setItem('css_crm_v7',JSON.stringify(ex));
+              showToast('Applied '+applied+' correction(s)');
+            }
+          }
+          load();filterList();updateStats();
+          showToast('Import: '+added+' new, '+filled+' blank(s) filled, '+suggest.length+' protected');
+          return;
+        }
+        if(Array.isArray(data)){importLeadsArray(data);return;}
+        if(data.leads){importLeadsArray(data.leads);return;}
+        showToast('Unrecognized format');
+      }catch(err){showToast('Import failed: '+err.message);}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 function importLeadsArray(leads){
   var ex={};try{ex=JSON.parse(localStorage.getItem('css_crm_v7')||'{}');}catch(e){}
